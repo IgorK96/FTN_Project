@@ -36,33 +36,27 @@ entity rsa is
           ADDR_WIDTH : integer := 32          
           );
   Port ( 
-    clk: in std_logic;
-    reset: in std_logic;
+    	clk: in std_logic;
+    	reset: in std_logic;
     
-    e_key: in std_logic_vector(WIDTH-1 downto 0);
-    private_key: in std_logic_vector(WIDTH-1 downto 0);
+    	e_key: in std_logic_vector(WIDTH-1 downto 0);
+    	private_key: in std_logic_vector(WIDTH-1 downto 0);
 	public_key: in std_logic_vector(WIDTH-1 downto 0);
 	txt_length: in std_logic_vector(WIDTH-1 downto 0);
 	start_enc: in std_logic;
 	start_dec: in std_logic;
 	
-	
-    --txt_addr: out std_logic_vector(ADDR_WIDTH-1 downto 0);
-    a_addr_o: out std_logic_vector(ADDR_WIDTH-1 downto 0);    
-	--text_in: in std_logic_vector(WIDTH-1 downto 0);
+	a_addr_o: out std_logic_vector(ADDR_WIDTH-1 downto 0);    
 	a_data_i: in std_logic_vector(WIDTH-1 downto 0);
 	a_en_o: out std_logic;
 	
-	--crypt_addr: out std_logic_vector(ADDR_WIDTH-1 downto 0);
-	b_addr_o: out std_logic_vector(ADDR_WIDTH-1 downto 0);
-    --crypt: out std_logic_vector(WIDTH-1 downto 0); 
-    b_data_o: out std_logic_vector(WIDTH-1 downto 0); 
-    b_en_o: out std_logic;
-    b_we_o: out std_logic;
+	b_addr_o: out std_logic_vector(ADDR_WIDTH-1 downto 0); 
+	b_data_o: out std_logic_vector(WIDTH-1 downto 0); 
+	b_en_o: out std_logic;
+	b_we_o: out std_logic;
     
-
-    start: in std_logic;
-    ready: out std_logic
+    	start: in std_logic;
+    	ready: out std_logic
   );
 end rsa;
 
@@ -71,19 +65,19 @@ architecture Behavioral of rsa is
     type state_type is (IDLE, CHECK, LOAD_ENC, LOAD_DEC, ENC_L1, ENC_L2, ENC_L3, ENC_L4, DEC_L1, DEC_L2, DEC_L3, DEC_L4, CALC_ADDR, RESET_C);
     signal state_reg, state_next: state_type;
     signal e_key_reg, e_key_next: unsigned(WIDTH-1 downto 0);
-	signal private_key_reg, private_key_next: unsigned(WIDTH-1 downto 0);
-	signal public_key_reg, public_key_next: unsigned(WIDTH-1 downto 0);
+    signal private_key_reg, private_key_next: unsigned(WIDTH-1 downto 0);
+    signal public_key_reg, public_key_next: unsigned(WIDTH-1 downto 0);
     signal text_in_reg, text_in_next: unsigned((WIDTH/2)-1 downto 0); 
     signal crypt_reg, crypt_next: unsigned(WIDTH-1 downto 0);
     signal temp_reg,temp_next: unsigned(WIDTH-1 downto 0);
     signal i_reg,i_next: unsigned(WIDTH-1 downto 0);
-	signal count_enc_reg, count_enc_next, counter_enc_out: unsigned(2 downto 0);
-	signal count_dec_reg, count_dec_next, counter_dec_out: unsigned(1 downto 0);
+    signal count_enc_reg, count_enc_next, counter_enc_out: unsigned(2 downto 0);
+    signal count_dec_reg, count_dec_next, counter_dec_out: unsigned(1 downto 0);
     signal adder_out: unsigned(WIDTH-1 downto 0);
     signal op_out: unsigned(WIDTH-1 downto 0);
-	signal txt_part_enc: unsigned(7 downto 0);
-	signal txt_part_dec: unsigned((WIDTH/2)-1 downto 0);
-	signal a_addr_reg, a_addr_next, a_addr_count, b_addr_reg, b_addr_next, b_addr_count: unsigned(ADDR_WIDTH-1 downto 0);
+    signal txt_part_enc: unsigned(7 downto 0);
+    signal txt_part_dec: unsigned((WIDTH/2)-1 downto 0);
+    signal a_addr_reg, a_addr_next, a_addr_count, b_addr_reg, b_addr_next, b_addr_count: unsigned(ADDR_WIDTH-1 downto 0);
     
 begin
 --control path: state register
