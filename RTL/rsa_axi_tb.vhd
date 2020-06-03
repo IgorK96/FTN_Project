@@ -154,7 +154,7 @@ begin
 -------------------------------------------------------------------------------------------
 --Loading elements into the core----
         wait until falling_edge(clk_s);
-        for i in 0 to txt_length_c loop -- bilo od 1
+        for i in 0 to txt_length_c-1 loop -- bilo od 1
             wait until falling_edge(clk_s);
             tb_a_en_i <= '1';
             tb_a_addr_i <= conv_std_logic_vector(i*4, ADDR_WIDTH_c);
@@ -427,8 +427,10 @@ begin
 
 		-- report "Reading the results of the B BRAM!";
 
-		for k in 0 to txt_length_c loop -- probaj od 1
-			wait until falling_edge(clk_s);
+		for k in 0 to txt_length_c-1 loop -- probaj od 1
+			for i in 1 to 10 loop
+			     wait until falling_edge(clk_s);
+			end loop;
 			tb_b_en_i <= '1';
 			tb_b_we_i <= '0';
 			tb_b_addr_i <= conv_std_logic_vector (k * 4, ADDR_WIDTH_c);
