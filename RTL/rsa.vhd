@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Company: 
 -- Engineer: 
--- 
+-- enc_dec_v1_0_S00_AXI
 -- Create Date: 09/14/2019 07:23:58 PM
 -- Design Name: 
 -- Module Name: rsa - Behavioral
@@ -36,27 +36,29 @@ entity rsa is
           ADDR_WIDTH : integer := 32          
           );
   Port ( 
-    	clk: in std_logic;
-    	reset: in std_logic;
+    clk: in std_logic;
+    reset: in std_logic;
     
-    	e_key: in std_logic_vector(WIDTH-1 downto 0);
-    	private_key: in std_logic_vector(WIDTH-1 downto 0);
+    e_key: in std_logic_vector(WIDTH-1 downto 0);
+    private_key: in std_logic_vector(WIDTH-1 downto 0);
 	public_key: in std_logic_vector(WIDTH-1 downto 0);
 	txt_length: in std_logic_vector(WIDTH-1 downto 0);
 	start_enc: in std_logic;
 	start_dec: in std_logic;
 	
-	a_addr_o: out std_logic_vector(ADDR_WIDTH-1 downto 0);    
+	
+    a_addr_o: out std_logic_vector(ADDR_WIDTH-1 downto 0);    
 	a_data_i: in std_logic_vector(WIDTH-1 downto 0);
 	a_en_o: out std_logic;
 	
-	b_addr_o: out std_logic_vector(ADDR_WIDTH-1 downto 0); 
-	b_data_o: out std_logic_vector(WIDTH-1 downto 0); 
-	b_en_o: out std_logic;
-	b_we_o: out std_logic;
+	b_addr_o: out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    b_data_o: out std_logic_vector(WIDTH-1 downto 0); 
+    b_en_o: out std_logic;
+    b_we_o: out std_logic;
     
-    	start: in std_logic;
-    	ready: out std_logic
+
+    start: in std_logic;
+    ready: out std_logic
   );
 end rsa;
 
@@ -65,19 +67,19 @@ architecture Behavioral of rsa is
     type state_type is (IDLE, CHECK, LOAD_ENC, LOAD_DEC, ENC_L1, ENC_L2, ENC_L3, ENC_L4, DEC_L1, DEC_L2, DEC_L3, DEC_L4, CALC_ADDR, RESET_C);
     signal state_reg, state_next: state_type;
     signal e_key_reg, e_key_next: unsigned(WIDTH-1 downto 0);
-    signal private_key_reg, private_key_next: unsigned(WIDTH-1 downto 0);
-    signal public_key_reg, public_key_next: unsigned(WIDTH-1 downto 0);
+	signal private_key_reg, private_key_next: unsigned(WIDTH-1 downto 0);
+	signal public_key_reg, public_key_next: unsigned(WIDTH-1 downto 0);
     signal text_in_reg, text_in_next: unsigned((WIDTH/2)-1 downto 0); 
     signal crypt_reg, crypt_next: unsigned(WIDTH-1 downto 0);
     signal temp_reg,temp_next: unsigned(WIDTH-1 downto 0);
     signal i_reg,i_next: unsigned(WIDTH-1 downto 0);
-    signal count_enc_reg, count_enc_next, counter_enc_out: unsigned(2 downto 0);
-    signal count_dec_reg, count_dec_next, counter_dec_out: unsigned(1 downto 0);
+	signal count_enc_reg, count_enc_next, counter_enc_out: unsigned(1 downto 0);
+	signal count_dec_reg, count_dec_next, counter_dec_out: unsigned(1 downto 0);
     signal adder_out: unsigned(WIDTH-1 downto 0);
     signal op_out: unsigned(WIDTH-1 downto 0);
-    signal txt_part_enc: unsigned(7 downto 0);
-    signal txt_part_dec: unsigned((WIDTH/2)-1 downto 0);
-    signal a_addr_reg, a_addr_next, a_addr_count, b_addr_reg, b_addr_next, b_addr_count: unsigned(ADDR_WIDTH-1 downto 0);
+	signal txt_part_enc: unsigned((WIDTH/2)-1 downto 0);
+	signal txt_part_dec: unsigned((WIDTH/2)-1 downto 0);
+	signal a_addr_reg, a_addr_next, a_addr_count, b_addr_reg, b_addr_next, b_addr_count: unsigned(ADDR_WIDTH-1 downto 0);
     
 begin
 --control path: state register
@@ -133,7 +135,7 @@ begin
                 state_next <= ENC_L4;
 
            when ENC_L4 =>
-                if(count_enc_reg = "100")then
+                if(count_enc_reg = "10")then
                     state_next <= CALC_ADDR;
                 else
                     state_next <= LOAD_ENC;
@@ -153,7 +155,7 @@ begin
                 state_next <= DEC_L4;
 
             when DEC_L4 =>
-                if(count_enc_reg = "10")then
+                if(count_dec_reg = "10")then
                     state_next <= CALC_ADDR;
                 else
                     state_next <= LOAD_DEC;
@@ -239,23 +241,22 @@ begin
                 count_enc_next <=(others => '0');
                 count_dec_next <=(others => '0');
 
-              when CHECK =>
+            when CHECK =>
                 e_key_next <= unsigned(e_key);
 				private_key_next <= unsigned(private_key);
 				public_key_next <= unsigned(public_key);
                 crypt_next <= (others => '0');
                 i_next <= (others => '0');
                 temp_next <= x"00000001";
-                a_en_o <= '1'; --**
+                a_en_o <= '1'; 
 
 
-             when LOAD_ENC =>
+            when LOAD_ENC =>
                 e_key_next <= unsigned(e_key);
 				private_key_next <= unsigned(private_key);
 				public_key_next <= unsigned(public_key);
-                text_in_next <= "00000000" & txt_part_enc;
+                text_in_next <= txt_part_enc;
                 crypt_next <= (others => '0');
-                crypt_next <= crypt_reg;
                 i_next <= (others => '0');
                 temp_next <= x"00000001";
                 a_en_o <= '1';
@@ -270,61 +271,51 @@ begin
                 temp_next <= x"00000001";
                 a_en_o <= '1';
        
-           when ENC_L1 =>
-                i_next <= adder_out;
+            when ENC_L1 =>
+                i_next <= i_reg+1;
                 temp_next <= ((temp_reg * text_in_reg) mod public_key_reg);    
                 a_en_o <= '0';
 
-           when DEC_L1 =>
-                i_next <= adder_out;
+            when DEC_L1 =>
+                i_next <= i_reg+1;
                 temp_next <= ((temp_reg * text_in_reg) mod public_key_reg); 
                 a_en_o <= '0';
 
-           when ENC_L2 =>
-				count_enc_next <= counter_enc_out;
+            when ENC_L2 =>
+				count_enc_next <= count_enc_reg+1;
 
-           when DEC_L2 =>
-				count_dec_next <= counter_dec_out;
+            when DEC_L2 =>
+				count_dec_next <= count_dec_reg+1;
 		   
-		   when ENC_L3 =>
+		    when ENC_L3 =>
 		        crypt_next <= temp_reg(WIDTH-1 downto 0); 
 
-           when DEC_L3 =>
+            when DEC_L3 =>
 		        crypt_next <= temp_reg(WIDTH-1 downto 0); 
 
-           when ENC_L4 =>
-                b_addr_next <= b_addr_count;
+            when ENC_L4 =>
+                b_addr_next <= b_addr_reg+4;
                 b_en_o <= '0'; 
                 b_we_o <= '1';
            
-           when DEC_L4 =>
-                b_addr_next <= b_addr_count;
+            when DEC_L4 =>
+                b_addr_next <= b_addr_reg+4;
                 b_en_o <= '0'; 
                 b_we_o <= '1';
            
 
-		    when CALC_ADDR =>
-				a_addr_next <= a_addr_count;
+	     when CALC_ADDR =>
+		a_addr_next <= a_addr_reg+4;
 			
         end case;
     end process;
     
-    --datapath: functional units
-    adder_out <= i_reg+1;
-    counter_enc_out <= count_enc_reg+1;
-	counter_dec_out <= count_dec_reg+1;
-	a_addr_count <= a_addr_reg+4;
-	b_addr_count <= b_addr_reg+4;
-     
 
-
-	with count_enc_reg select
-		txt_part_enc <= unsigned(a_data_i(7 downto 0)) when "011",
-		            unsigned(a_data_i(15 downto 8)) when "010",
-		            unsigned(a_data_i(23 downto 16)) when "001",
-		            unsigned(a_data_i(31 downto 24)) when "000",
-		            "00000000" when others;
-   with count_dec_reg select
+    with count_enc_reg select
+		txt_part_enc <=unsigned(a_data_i(15 downto 0)) when "01",
+		            unsigned(a_data_i(31 downto 16)) when "00",
+		            "0000000000000000" when others;
+    with count_dec_reg select
 		txt_part_dec <= unsigned(a_data_i(15 downto 0)) when "01",
 		            unsigned(a_data_i(31 downto 16)) when "00",
 		            "0000000000000000" when others;
