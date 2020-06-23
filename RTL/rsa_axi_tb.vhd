@@ -47,12 +47,18 @@ architecture Behavioral of rsa_axi_tb is
     constant e_key_c : integer := 5;
     constant private_key_c : integer := 77;
     constant public_key_c : integer := 221;
-    constant txt_length_c : integer := 7; 
+    constant txt_length_c : integer := 16; 
     
+    --For encryption
     type mem_t is array (0 to txt_length_c) of integer;
-    constant MEM_A_CONTENT: mem_t :=
-    (1265592937,1265592937,1265592937,1265592937,5,6,7,8);
-    --(9633868,9633868,1265592937,1265592937,5,6,7,8);
+    constant MEM_A_CONTENT: mem_t := 
+    (4456570, 7274610, 6553722, 2097234, 5373984, 5046369, 7471220, 6881390, 2097235, 7733349, 7602208, 4980837, 6553697, 2097257, 2097238, 6357108, 7471205);
+    
+
+    --For decryption
+    --type mem_t is array (0 to txt_length_c) of integer;
+    --constant MEM_A_CONTENT: mem_t := 
+    --(13369349, 4980909, 11272197, 131186, 7471106, 1638454, 11337740, 13697169, 131142, 7733434, 786434, 7274682, 11272246, 131281, 131158, 3538956, 11337914); --za dekripciju 2 karaktera zajedno uzima 147   76  kad se spoji binarno se dobije 9633868 (147 je K enkriptovano i 76 je o enkriptovano)
 
 ------------------------------------------------------------------
     signal clk_s: std_logic;
@@ -172,7 +178,7 @@ begin
         
 -- Initialize the RSA core --
     ----------------------------------------------------------------------
-    report "Loading the matrix dimensions information into the Matrix Multiplier core!";
+    report "Loading keys into core!";
  
     -- Set the value for e_key
     wait until falling_edge(clk_s);
@@ -260,7 +266,7 @@ begin
     wait until falling_edge(clk_s);
     s00_axi_awaddr_s <= conv_std_logic_vector(TXT_LENGTH_REG_ADDR_c, C_S00_AXI_ADDR_WIDTH_c);
     s00_axi_awvalid_s <= '1';
-    s00_axi_wdata_s <= conv_std_logic_vector(txt_length_c, C_S00_AXI_DATA_WIDTH_c);
+    s00_axi_wdata_s <= conv_std_logic_vector(4*txt_length_c, C_S00_AXI_DATA_WIDTH_c);--treba 4* nekako
     s00_axi_wvalid_s <= '1';
     s00_axi_wstrb_s <= "1111";
     s00_axi_bready_s <= '1';
@@ -338,7 +344,7 @@ begin
 -------------------------------------------------------------------------------------------
 --Loading elements into the core----
         wait until falling_edge(clk_s);
-        for i in 0 to txt_length_c loop -- bilo od 1
+        for i in 0 to txt_length_c loop 
             wait until falling_edge(clk_s);
             tb_a_en_i <= '1';
             tb_a_addr_i <= conv_std_logic_vector(i*4, ADDR_WIDTH_c);
@@ -418,7 +424,7 @@ begin
 
 			-- Check is the 1st bit of the Status register set to one
 			if (s00_axi_rdata_s(0) = '1') then
-				-- convolution process completed
+				
 				exit;
 			else
 				wait for 1000 ns;
@@ -427,8 +433,8 @@ begin
 
 		-- report "Reading the results of the B BRAM!";
 
-		for k in 0 to txt_length_c-1 loop -- probaj od 1
-			for i in 1 to 10 loop
+		for k in 0 to (2*txt_length_c)+1 loop --bilo i -1
+			for i in 1 to 20 loop --200 za dec 20 za enc
 			     wait until falling_edge(clk_s);
 			end loop;
 			tb_b_en_i <= '1';
@@ -457,9 +463,9 @@ uut: entity work.RSA_v1_0(arch_imp)
         reseta  => open,
         ena  => ip_a_en,   
         addra  => ip_a_addr,
-        --dina  => open,  
+        dina  => open,  --
         douta  => ip_a_data, 
-        --wea  => open,    
+        wea  => open,    --
          
     
     -- Interface to the BRAM B module
@@ -468,7 +474,7 @@ uut: entity work.RSA_v1_0(arch_imp)
         enb  => ip_b_en,   
         addrb  => ip_b_addr,
         dinb  => ip_b_data,  
-        --doutb  => (others=>'0'),
+        doutb  => (others=>'0'),--
         web  => ip_b_we, 
     
     
@@ -499,7 +505,6 @@ uut: entity work.RSA_v1_0(arch_imp)
 Bram_A: entity work.bram(beh)
     generic map(
                 WIDTH       =>  DATA_WIDTH_c,
-                --MAX_SIZE    =>  MAX_SIZE_c,
                 WADDR       =>  ADDR_WIDTH_c
                 )
     port map(
@@ -523,7 +528,6 @@ Bram_A: entity work.bram(beh)
 Bram_B: entity work.bram(beh)
     generic map(
                 WIDTH       =>  DATA_WIDTH_c,
-                --MAX_SIZE    =>  MAX_SIZE_c,
                 WADDR       =>  ADDR_WIDTH_c
                 )
     port map(
